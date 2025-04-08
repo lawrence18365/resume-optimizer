@@ -29,7 +29,7 @@ Output a complete, optimized resume structure as JSON.
 
 def optimize_resume(resume_data, job_data):
     """
-    Optimize a resume using Gemini API based on job listing analysis.
+    Optimize a resume using Gemini API with failsafe fallback.
     
     Args:
         resume_data (dict): Parsed resume data.
@@ -57,17 +57,24 @@ def optimize_resume(resume_data, job_data):
         optimized_resume = json.loads(content)
         return optimized_resume
     
-    except json.JSONDecodeError:
-        print("[Optimizer] Failed to parse JSON from Gemini response.")
-        print(content)
-        # Fallback: return original resume data with warning
-        fallback = resume_data.copy()
-        fallback['warning'] = "Gemini API response could not be parsed. Returning original resume data."
-        return fallback
-    
     except Exception as e:
-        print(f"[Optimizer] Error during Gemini API call: {str(e)}")
-        # Fallback: return original resume data with warning
-        fallback = resume_data.copy()
-        fallback['warning'] = f"Gemini API call failed: {str(e)}. Returning original resume data."
-        return fallback
+        print(f"Optimization API failed: {str(e)}")
+        print("Falling back to basic optimization")
+        
+        # Create a copy of the original resume
+        optimized = resume_data.copy()
+        
+        # Add keywords from job to skills
+        job_skills = job_data.get('required_skills', [])
+        current_skills = optimized.get('skills', [])
+        for skill in job_skills:
+            if skill not in current_skills:
+                current_skills.append(skill)
+        optimized['skills'] = current_skills
+        
+        # Add a new summary if none exists
+        if not optimized.get('summary'):
+            optimized['summary'] = f"Experienced professional with skills in {', '.join(current_skills[:5])}."
+        
+        optimized['_optimization_note'] = "Basic optimization (API fallback mode)"
+        return optimized

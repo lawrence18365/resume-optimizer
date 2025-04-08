@@ -75,32 +75,49 @@ def upload():
 
 @app.route('/optimize')
 def optimize():
-    """Process the resume and job listing to generate an optimized resume."""
-    # Get file path and job listing from session
-    resume_path = session.get('resume_path')
-    job_listing = session.get('job_listing')
-    
-    if not resume_path or not job_listing:
-        flash('Resume or job listing information missing')
-        return redirect(url_for('upload'))
-    
     try:
+        print("Starting optimization process...")
+        # Get file path and job listing from session
+        resume_path = session.get('resume_path')
+        job_listing = session.get('job_listing')
+        
+        if not resume_path or not job_listing:
+            print("Resume path or job listing missing")
+            flash('Resume or job listing information missing')
+            return redirect(url_for('upload'))
+        
+        if not os.path.exists(resume_path):
+            print(f"File not found: {resume_path}")
+            flash('Resume file not found')
+            return redirect(url_for('upload'))
+            
         # Parse the resume
+        print("Parsing resume...")
         resume_data = parse_resume(resume_path)
+        print("Resume parsed successfully")
         
         # Analyze the job listing
+        print("Analyzing job listing...")
         job_data = analyze_job_listing(job_listing)
+        print("Job listing analyzed")
         
         # Optimize the resume
+        print("Optimizing resume...")
         optimized_resume = optimize_resume(resume_data, job_data)
+        print("Resume optimized")
         
         # Generate the optimized DOCX file
+        print("Generating DOCX...")
         original_filename = session.get('original_filename', 'resume')
         filename_base = os.path.splitext(original_filename)[0]
         output_filename = f"{filename_base}_optimized.docx"
         output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
         
+        # Ensure uploads directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        
         generate_docx(optimized_resume, output_path)
+        print(f"DOCX generated at: {output_path}")
         
         # Store the output path in session
         session['output_path'] = output_path
@@ -109,6 +126,9 @@ def optimize():
         return redirect(url_for('result'))
     
     except Exception as e:
+        import traceback
+        print(f"ERROR in optimization process: {str(e)}")
+        print(traceback.format_exc())
         flash(f'Error optimizing resume: {str(e)}')
         return redirect(url_for('upload'))
 
