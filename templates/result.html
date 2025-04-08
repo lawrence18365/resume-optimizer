@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Optimized - Resume Optimizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-light">
+    <div class="container">
+        <header class="py-4 text-center">
+            <h1 class="h3">Resume Optimizer</h1>
+            <p class="text-muted">Your optimized resume is ready!</p>
+        </header>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card shadow-sm">
+                    <div class="card-body p-5 text-center">
+                        <div class="mb-4">
+                            <div class="success-icon">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                            </div>
+                            <h2 class="card-title mt-3">Resume Successfully Optimized!</h2>
+                            <p class="text-muted">Your resume has been tailored to match the job requirements.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-3 col-md-8 mx-auto">
+                            <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-download me-2"></i> Download Optimized Resume
+                            </a>
+                            <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-repeat me-2"></i> Optimize Another Resume
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body p-4">
+                        <h3 class="card-title mb-3">Next Steps</h3>
+                        <ol class="list-group list-group-numbered mb-3">
+                            <li class="list-group-item">Review your optimized resume for accuracy</li>
+                            <li class="list-group-item">Make any final personal adjustments if needed</li>
+                            <li class="list-group-item">Submit your tailored resume to the job application</li>
+                            <li class="list-group-item">Prepare for interviews using the job description</li>
+                        </ol>
+                        
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <strong>Pro Tip:</strong> Always optimize your resume for each specific job application to maximize your chances of getting an interview.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="my-5 pt-5 text-muted text-center text-small">
+            <p class="mb-1">© 2025 Resume Optimizer</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

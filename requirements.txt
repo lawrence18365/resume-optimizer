@@ -1,0 +1,5 @@
+flask
+python-docx
+google-generativeai
+python-dotenv
+protobuf==4.25.3
