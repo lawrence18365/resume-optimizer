@@ -180,64 +180,78 @@ def extract_skills(skills_section):
 
 def extract_experience(experience_section):
     """
-    Extract work experience from the experience section.
-    
-    Args:
-        experience_section (list): List of text lines from the experience section
-        
-    Returns:
-        list: Structured work experience entries
+    Extract work experience with improved structure detection.
     """
     experiences = []
-    current_experience = None
+    current_job = None
+    current_role = None
+    date_pattern = r'(?:\d{1,2}/\d{1,2}|\d{1,2}/\d{4}|\d{4}|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'
     
-    for line in experience_section:
-        # Try to detect new experience entry (usually starts with company or title)
-        date_pattern = r'(?:\d{1,2}/\d{1,2}|\d{1,2}/\d{4}|\d{4}|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'
-        is_new_entry = (
-            bool(re.search(rf'{date_pattern}.*{date_pattern}|{date_pattern}.*present|{date_pattern}.*current', line, re.IGNORECASE)) or
-            bool(re.search(r'^[A-Z][^,\.]{0,50}$', line))  # Capitalized short line
-        )
+    # If we have a large block of text, let's try to split it into sections first
+    if len(experience_section) > 0 and any('\n' in line for line in experience_section):
+        # Flatten and re-split by newlines
+        full_text = '\n'.join(experience_section)
+        experience_section = [line.strip() for line in full_text.split('\n') if line.strip()]
+    
+    i = 0
+    while i < len(experience_section):
+        line = experience_section[i].strip()
         
-        if is_new_entry:
-            # Save previous entry if exists
-            if current_experience:
-                experiences.append(current_experience)
+        # Skip empty lines
+        if not line:
+            i += 1
+            continue
             
-            # Initialize new experience entry
-            current_experience = {
-                'title': '',
+        # Check if this could be a job title (short capitalized text, no punctuation)
+        if len(line) < 50 and line[0].isupper() and not any(x in line for x in ['.', ':', ',', ';']):
+            # Save previous job if we have one
+            if current_job:
+                experiences.append(current_job)
+                
+            # Start a new job object
+            current_job = {
+                'title': line,
                 'company': '',
+                'location': '',
                 'date_range': '',
                 'description': []
             }
+            i += 1
             
-            # Try to extract date range
-            date_match = re.search(rf'({date_pattern}.*?{date_pattern}|{date_pattern}.*?present|{date_pattern}.*?current)', line, re.IGNORECASE)
-            if date_match:
-                current_experience['date_range'] = date_match.group(0)
-                # Remove date from line for further processing
-                line = re.sub(rf'{re.escape(date_match.group(0))}', '', line).strip()
-            
-            # Assume what's left might be company and/or title
-            if '|' in line or '-' in line or ',' in line or '@' in line:
-                parts = re.split(r'\s*[\|,-]\s*|\s+@\s+', line, 1)
-                if len(parts) >= 2:
-                    current_experience['title'] = parts[0].strip()
-                    current_experience['company'] = parts[1].strip()
-                else:
-                    current_experience['company'] = line
-            else:
-                current_experience['company'] = line
+            # Check if next line might be company name
+            if i < len(experience_section):
+                company_line = experience_section[i].strip()
+                if company_line and len(company_line) < 50:
+                    current_job['company'] = company_line
+                    i += 1
+                    
+                    # Check if next line might be location
+                    if i < len(experience_section):
+                        location_line = experience_section[i].strip()
+                        # Location typically has a state/province code
+                        if location_line and len(location_line) < 50 and re.search(r'[A-Z]{2}', location_line):
+                            current_job['location'] = location_line
+                            i += 1
                 
-        elif current_experience:
-            # Add line to description of current experience
-            if line.strip():
-                current_experience['description'].append(line.strip())
+                    # Check if next line might be date range
+                    if i < len(experience_section):
+                        date_line = experience_section[i].strip()
+                        if date_line and re.search(date_pattern, date_line):
+                            current_job['date_range'] = date_line
+                            i += 1
+        
+        # If we have a job and this isn't a new job title, it's probably a bullet point
+        elif current_job:
+            # This is a description/bullet point for the current job
+            current_job['description'].append(line)
+            i += 1
+        else:
+            # If we can't categorize this line, just move on
+            i += 1
     
-    # Add the last experience
-    if current_experience:
-        experiences.append(current_experience)
+    # Don't forget to add the last job
+    if current_job:
+        experiences.append(current_job)
     
     return experiences
 

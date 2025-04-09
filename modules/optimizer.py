@@ -4,8 +4,9 @@ def optimize_resume(resume_data, job_data):
     """Create an optimized resume directly."""
     print("Using simplified resume optimizer...")
     
-    # Copy the original resume
-    optimized = resume_data.copy()
+    # Create deep copy of the resume data to avoid structure loss
+    import copy
+    optimized = copy.deepcopy(resume_data)
     
     # Get job skills and current skills
     job_skills = job_data.get('required_skills', [])
