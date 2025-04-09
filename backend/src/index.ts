@@ -41,6 +41,173 @@ function transformAIResponse(aiResponse: any, originalResumeData: any) {
 
   return transformed;
 }
+/**
+ * Basic fallback optimizer if AI response fails
+ */
+function fallbackOptimizeResume(resumeText: string, jobDescription: string) {
+  const fallback: {
+    contact_info: any;
+    summary: string;
+    skills: string[];
+    experience: any[];
+    education: any[];
+    _optimization_note?: string;
+  } = {
+    contact_info: {},
+    summary: '',
+    skills: [],
+    experience: [],
+    education: []
+  };
+
+  // Extract some skills from job description (very basic keyword extraction)
+  const skillMatches = jobDescription.match(/\b[A-Za-z\+\#]{2,}\b/g) || [];
+  const uniqueSkills = Array.from(new Set(skillMatches)).slice(0, 10);
+  fallback.skills = uniqueSkills;
+
+  // Create a simple summary
+  const skillText = uniqueSkills.slice(0, 3).join(', ') || 'relevant skills';
+  fallback.summary = `Professional with expertise in ${skillText}.`;
+
+  // Add optimization note
+  (fallback as any)._optimization_note = 'Fallback optimization applied due to AI failure';
+
+  return fallback;
+}
+
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+
+/**
+ * Get cached AI response or generate a new one
+ */
+async function getCachedOrNewAIResponse(resumeText: string, jobDescription: string, fetchAIResponse: () => Promise<string>): Promise<string> {
+  const cacheDir = path.join(__dirname, '../../cache');
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+
+  const hash = crypto.createHash('md5').update(resumeText + jobDescription).digest('hex');
+  const cacheFile = path.join(cacheDir, `${hash}.json`);
+
+  // Check if cache exists and is fresh (<24h)
+  if (fs.existsSync(cacheFile)) {
+    const stats = fs.statSync(cacheFile);
+    const ageHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
+    if (ageHours < 24) {
+      try {
+        const cached = fs.readFileSync(cacheFile, 'utf-8');
+        return cached;
+      } catch (e) {
+        console.warn('Failed to read cache, regenerating...');
+      }
+    }
+  }
+
+  // Generate new response
+  const aiResponse = await fetchAIResponse();
+
+  // Cache it
+  try {
+    fs.writeFileSync(cacheFile, aiResponse, 'utf-8');
+  } catch (e) {
+    console.warn('Failed to write cache:', e);
+  }
+
+  return aiResponse;
+}
+
+/**
+ * Basic resume text parser to extract contact info, skills, experience, education
+ */
+function parseResumeText(text: string) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+
+  const data: any = {
+    contact_info: {},
+    skills: [],
+    experience: [],
+    education: []
+  };
+
+  // Extract email and phone
+  for (const line of lines) {
+    if (!data.contact_info.email) {
+      const emailMatch = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      if (emailMatch) data.contact_info.email = emailMatch[0];
+    }
+    if (!data.contact_info.phone) {
+      const phoneMatch = line.match(/(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?){1,2}\d{4}/);
+      if (phoneMatch) data.contact_info.phone = phoneMatch[0];
+    }
+  }
+
+  // Extract name (first non-empty line)
+  if (lines.length > 0) {
+    data.contact_info.name = lines[0];
+  }
+
+  // Extract skills (lines after "Skills" header)
+  const skillsIdx = lines.findIndex(l => /skills/i.test(l));
+  if (skillsIdx !== -1) {
+    for (let i = skillsIdx + 1; i < lines.length; i++) {
+      if (/experience|education/i.test(lines[i])) break;
+      const skillLine = lines[i].replace(/[-•*]/g, '').trim();
+      if (skillLine) {
+        data.skills.push(...skillLine.split(/,|\s{2,}/).map(s => s.trim()).filter(s => s));
+      }
+    }
+    data.skills = Array.from(new Set(data.skills));
+  }
+
+  // Extract experience (lines after "Experience" header)
+  const expIdx = lines.findIndex(l => /experience/i.test(l));
+  if (expIdx !== -1) {
+    let currentJob: any = null;
+    for (let i = expIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (/education/i.test(line)) break;
+
+      if (/^\w.+ at .+$/i.test(line)) {
+        if (currentJob) data.experience.push(currentJob);
+        const [titlePart, companyPart] = line.split(' at ');
+        currentJob = { title: titlePart.trim(), company: companyPart.trim(), date_range: '', description: [] };
+      } else if (/\d{4}/.test(line)) {
+        if (currentJob) currentJob.date_range = line.trim();
+      } else if (line.startsWith('-') || line.startsWith('•') || line.startsWith('*')) {
+        if (currentJob) currentJob.description.push(line.replace(/[-•*]/, '').trim());
+      }
+    }
+    if (currentJob) data.experience.push(currentJob);
+  }
+
+  // Extract education (lines after "Education" header)
+  const eduIdx = lines.findIndex(l => /education/i.test(l));
+  if (eduIdx !== -1) {
+    let currentEdu: any = null;
+    for (let i = eduIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (/experience/i.test(line)) break;
+
+      if (/degree|bachelor|master|phd|associate/i.test(line)) {
+        if (currentEdu) data.education.push(currentEdu);
+        currentEdu = { degree: line.trim(), institution: '', date_range: '', details: [] };
+      } else if (/\d{4}/.test(line)) {
+        if (currentEdu) currentEdu.date_range = line.trim();
+      } else {
+        if (currentEdu) {
+          if (!currentEdu.institution) currentEdu.institution = line.trim();
+          else currentEdu.details.push(line.trim());
+        }
+      }
+    }
+    if (currentEdu) data.education.push(currentEdu);
+  }
+
+  return data;
+}
+
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
@@ -63,7 +230,10 @@ app.post('/api/upload', upload.single('resume'), async (req: Request, res: Respo
     const buffer = req.file.buffer;
     const result = await mammoth.extractRawText({ buffer });
     const text = result.value;
-    res.json({ success: true, text });
+
+    const structured = parseResumeText(text);
+
+    res.json({ success: true, text, structured });
   } catch (error: any) {
     console.error('Resume parsing failed:', error);
     res.status(500).json({ success: false, error: 'Failed to parse resume' });
@@ -128,41 +298,43 @@ app.post('/api/optimize', async (req: Request, res: Response): Promise<void> => 
         return;
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
+      aiResponseText = await getCachedOrNewAIResponse(resumeText, jobDescription, async () => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${deepSeekKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: 'You are an expert resume optimizer.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.4,
-          max_tokens: 1500
-        }),
-        signal: controller.signal
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${deepSeekKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              { role: 'system', content: 'You are an expert resume optimizer.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.4,
+            max_tokens: 1500
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`DeepSeek API error: ${errorText}`);
+        }
+
+        const data: any = await response.json();
+        if (!data.choices || !data.choices[0]?.message?.content) {
+          throw new Error('DeepSeek API returned unexpected response format');
+        }
+        return data.choices[0].message.content;
       });
 
-      clearTimeout(timeout);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`DeepSeek API error: ${errorText}`);
-      }
-
-      const data: any = await response.json();
-      if (!data.choices || !data.choices[0]?.message?.content) {
-        throw new Error('DeepSeek API returned unexpected response format');
-      }
-      aiResponseText = data.choices[0].message.content;
-
-    console.log('AI raw response:', aiResponseText);
+      console.log('AI raw response:', aiResponseText);
 
     try {
       // Remove Markdown code block markers if present
@@ -195,7 +367,9 @@ app.post('/api/optimize', async (req: Request, res: Response): Promise<void> => 
       res.status(200).json({ success: true, optimized: transformed });
     } catch (parseError: any) {
       console.error('AI response parsing/validation failed:', parseError);
-      res.status(500).json({ success: false, error: 'Failed to parse or validate AI response', details: parseError.message });
+      console.log('Using fallback optimizer...');
+      const fallbackOptimized = fallbackOptimizeResume(resumeText, jobDescription);
+      res.status(200).json({ success: true, optimized: fallbackOptimized });
     }
     } catch (error: any) {
       console.error('Unexpected error in /api/optimize:', error);

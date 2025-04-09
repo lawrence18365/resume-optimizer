@@ -1,0 +1,96 @@
+```json
+{
+  "summary": "Dynamic hospitality and administrative professional with 5+ years of experience in team leadership, event coordination, and client relations. Proven track record of driving operational efficiency, exceeding targets, and creating exceptional guest experiences in fast-paced environments. Adept at training teams, managing high-volume operations, and fostering positive workplace cultures.",
+  "skills": [
+    "Team Leadership & Training",
+    "Event Coordination & Management",
+    "Client Relations & Outreach",
+    "Operational Efficiency",
+    "High-Volume Service Management"
+  ],
+  "workExperience": [
+    {
+      "company": "Marcellos",
+      "position": "Server",
+      "duration": "Feb 2025 - Present",
+      "bullets": [
+        "Connected clients with investment team for in-home consultations, creating high-converting leads through targeted financial screening.",
+        "Exceeded weekly appointment targets by 57%, leading team performance in a fast-paced environment."
+      ]
+    },
+    {
+      "company": "Big Dog Marketing",
+      "position": "Appointment Setter",
+      "duration": "Jan 2024 - Jan 2025",
+      "bullets": [
+        "Managed 300-400 outbound calls daily, qualifying mortgage leads and converting cold calls into consultations.",
+        "Maintained top performance while handling sensitive client data and coordinating multi-location schedules."
+      ]
+    },
+    {
+      "company": "Renewal by Andersen",
+      "position": "Events and RSVP Marketing Coordinator",
+      "duration": "Feb 2023 - Dec 2023",
+      "bullets": [
+        "Coordinated diverse events for 30-60 attendees, managing RSVPs and guest lists with precision.",
+        "Led a 25-member team, conducting training programs and initiating end-to-end hiring processes."
+      ]
+    },
+    {
+      "company": "The Dime on Granville",
+      "position": "Bartender",
+      "duration": "May 2022 - Feb 2023",
+      "bullets": [
+        "Executed end-of-day cashouts and closing procedures with meticulous attention to financial accuracy.",
+        "Resolved customer concerns independently, fostering positive guest experiences in high-pressure settings."
+      ]
+    },
+    {
+      "company": "Whistler Brewing Company",
+      "position": "Bartender/Supervisor",
+      "duration": "Mar 2021 - Apr 2022",
+      "bullets": [
+        "Conducted engaging beer tastings, educating customers on beer terminology and enhancing guest experiences.",
+        "Managed solo or with a team, efficiently serving a capacity of 84 seats during live music nights."
+      ]
+    },
+    {
+      "company": "Harbour House",
+      "position": "Supervisor",
+      "duration": "Jun 2020 - Oct 2020",
+      "bullets": [
+        "Assumed supervisory role in the absence of managers, overseeing daily operations and maintaining service standards.",
+        "Managed takeout orders for boat dock and dash services in a bustling marina environment."
+      ]
+    },
+    {
+      "company": "The Green Room",
+      "position": "Bartender",
+      "duration": "Nov 2019 - Apr 2020",
+      "bullets": [
+        "Excelled in high-energy, night club-style bar service, managing a section of 30+ seats and a 10-seat bar rail.",
+        "Hosted events and birthday parties for 10-40 guests, coordinating logistics and delivering personalized service."
+      ]
+    },
+    {
+      "company": "Maid In Muskoka",
+      "position": "Team Leader/Cleaning Supervisor",
+      "duration": "Sep 2019 - Mar 2020",
+      "bullets": [
+        "Led high-end cleaning teams for luxury properties, training staff in premium cleaning standards.",
+        "Conducted quality inspections and managed inventory of specialized cleaning supplies."
+      ]
+    },
+    {
+      "company": "Taboo Resort",
+      "position": "Banquet Server",
+      "duration": "Mar 2018 - Oct 2019",
+      "bullets": [
+        "Executed banquet service for high-profile events, adhering to fine dining standards and collaborating with culinary teams.",
+        "Enhanced guest satisfaction through polished service techniques and discreet resolution of concerns."
+      ]
+    }
+  ],
+  "education": []
+}
+```
